@@ -6,8 +6,8 @@
 <meta name="robots" content="noindex">
 <title>Manifest numbers</title>
 <style>
-  :root { color-scheme: light dark; --bg: #faf7f8; --card: #fff; --ink: #1d1a1c; --mute: #6c6468; --line: #e6dfe2; --fill: #8e5a86; }
-  @media (prefers-color-scheme: dark) { :root { --bg: #15121a; --card: #1f1a26; --ink: #f1ebf0; --mute: #a69aa6; --line: #342c3c; --fill: #b98bb0; } }
+  :root { color-scheme: light dark; --bg: #faf7f8; --card: #fff; --ink: #1d1a1c; --mute: #6c6468; --line: #e6dfe2; --fill: #8e5a86; --good: #2e7d4f; --bad: #b3423a; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #15121a; --card: #1f1a26; --ink: #f1ebf0; --mute: #a69aa6; --line: #342c3c; --fill: #b98bb0; --good: #7fcf9a; --bad: #f08c84; } }
   * { box-sizing: border-box; }
   body { margin: 0; padding: 16px; background: var(--bg); color: var(--ink); font: 16px/1.45 -apple-system, system-ui, sans-serif; }
   main { max-width: 760px; margin: 0 auto; }
@@ -15,6 +15,7 @@
   .muted, .cap, .sub, .note { color: var(--mute); } .cap { font-size: 13px; } .sub { font-size: 13px; margin: 14px 0 6px; } .note { font-size: 13px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; } .big { font-size: 26px; font-weight: 600; line-height: 1.1; }
+  .good { color: var(--good); } .bad { color: var(--bad); }
   table { width: 100%; border-collapse: collapse; font-size: 14px; } td, th { text-align: left; padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; } th { font-weight: 600; color: var(--mute); font-size: 12px; }
   tr:last-child td { border-bottom: 0; }
   .bar { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 3px 0; } .lbl { width: 64px; color: var(--mute); } .track { flex: 1; height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; } .fill { display: block; height: 100%; background: var(--fill); } .n { width: 40px; text-align: right; }
@@ -26,19 +27,19 @@
 <script>
 // The numbers page: the figures come live from our own server (the `numbers` function) each time this page is opened.
 // The key is in this page's address after the #, which the browser never sends to GitHub; without it the server
-// answers nothing. Counts and cents only.
+// answers nothing. Counts and cents only. Money in comes from Adapty's purchase events, kept on our server.
 const SERVER = "https://bprblozzuniqelpzmlvl.supabase.co/functions/v1/numbers";
-const PLAN_NET_CENTS = 1104; // US$12.99 a month, after Apple's 15% (the Small Business Program)
 
 const num = (x) => (typeof x === "number" ? x : Number(x ?? 0)) || 0;
 const int = (x) => num(x).toLocaleString("en-US", { maximumFractionDigits: 0 });
 const cents = (x) => (x === null || x === undefined ? "–" : `${num(x).toFixed(1)}¢`);
-const dollars = (x) => `$${(num(x) / 100).toFixed(2)}`;
+const dollars = (x) => `${num(x) < 0 ? "-" : ""}$${(Math.abs(num(x)) / 100).toFixed(2)}`;
 const pct = (part, whole) => (num(whole) ? `${Math.round((num(part) / num(whole)) * 100)}%` : "–");
 const month = (iso) => new Date(String(iso) + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
 const day = (iso) => new Date(String(iso) + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 const when = (iso) => (iso ? new Date(String(iso)).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "–");
 const plural = (n, one, many) => `${int(n)} ${num(n) === 1 ? one : many}`;
+const planName = (p) => ({ monthly_1299: "Monthly" })[p] || p || "–";
 
 function bar(label, n, max) {
   const w = max ? Math.max(2, Math.round((n / max) * 100)) : 2;
@@ -48,7 +49,13 @@ function bar(label, n, max) {
 function render(d) {
   const today = d.today || {};
   const m = d.month || {};
-  const cost = d.cost || [];
+  const mm = d.money_month || {};
+  const ma = d.money_all || {};
+  const free = d.free_cost || {};
+  const cohorts = d.cohorts || [];
+  const real = (d.cost || []).length > 0 || (d.with_fixes && num(d.with_fixes.n) > 0);
+  const cost = real ? d.cost || [] : d.cost_test || [];
+  const wf = real ? d.with_fixes || {} : d.with_fixes_test || {};
   const story = cost.find((c) => c.kind === "story");
   const fix = cost.find((c) => c.kind === "fix");
   const weeks = d.weeks || [];
@@ -57,14 +64,21 @@ function render(d) {
   const conc = d.concurrency || {};
   const dayFor = (mo) => days.find((x) => x.month === mo) || {};
   const concMax = Math.max(num(conc.c1), num(conc.c2), num(conc.c3), num(conc.c4), num(conc.c5));
+  const netMonth = num(mm.proceeds_cents) - num(mm.cost_cents);
+  const netAll = num(ma.proceeds_cents) - num(ma.cost_cents);
+  const tone = (n) => (n > 0 ? "good" : n < 0 ? "bad" : "");
 
   const costRow = (name, c) => c
     ? `<tr><td>${name}</td><td>${int(c.n)}</td><td>${cents(c.text_cents)}</td><td>${cents(c.voice_cents)}</td><td><b>${cents(c.cents)}</b></td><td>${cents(c.median_cents)}</td><td>${cents(c.max_cents)}</td><td>${int(c.chars)}</td></tr>`
     : `<tr><td>${name}</td><td colspan="7" class="muted">none with a saved cost yet</td></tr>`;
 
+  const cohortRows = cohorts.map((c) => {
+    const left = num(c.proceeds_cents_per_person) - num(c.cents_per_person);
+    return `<tr><td>${planName(c.product)}</td><td>${int(c.people)}</td><td>${dollars(c.proceeds_cents_per_person)}</td><td>${dollars(c.cents_per_person)}</td><td class="${tone(left)}"><b>${dollars(left)}</b></td></tr>`;
+  }).join("");
+
   const monthRows = months.map((mo) => {
     const dd = dayFor(mo.month);
-    const left = PLAN_NET_CENTS - num(mo.cents_per_person);
     const bmax = Math.max(num(mo.b1), num(mo.b2_3), num(mo.b4_10), num(mo.b11_39), num(mo.b40));
     return `<section class="card">
       <h3>${month(mo.month)}</h3>
@@ -72,7 +86,7 @@ function render(d) {
         <div><div class="big">${int(mo.people)}</div><div class="cap">people made a story</div></div>
         <div><div class="big">${int(mo.stories)}</div><div class="cap">stories, ${num(mo.stories_per_person).toFixed(1)} a person</div></div>
         <div><div class="big">${int(mo.fixes)}</div><div class="cap">fixes, ${num(mo.fixes_per_person).toFixed(1)} a person</div></div>
-        <div><div class="big">${dollars(mo.cents_per_person)}</div><div class="cap">cost a person; ${dollars(left)} of the ${dollars(PLAN_NET_CENTS)} a subscriber brings in is left</div></div>
+        <div><div class="big">${dollars(mo.cents_per_person)}</div><div class="cap">cost a person (stories and fixes)</div></div>
       </div>
       <p class="sub">Stories a person this month</p>
       ${bar("1", num(mo.b1), bmax)}${bar("2 to 3", num(mo.b2_3), bmax)}${bar("4 to 10", num(mo.b4_10), bmax)}${bar("11 to 39", num(mo.b11_39), bmax)}${bar("40", num(mo.b40), bmax)}
@@ -87,7 +101,18 @@ function render(d) {
   const weekRows = weeks.map((w) => `<tr><td>${day(w.week)}</td><td>${int(w.people)}</td><td>${int(w.stories)}</td><td>${int(w.fixes)}</td><td>${w.story_cents === null || w.story_cents === undefined ? "–" : cents(w.story_cents)}</td><td>${dollars(w.cents)}</td></tr>`).join("");
 
   return `<h1>Manifest numbers</h1>
-<p class="cap">As of ${when(d.made_at)}. Costs are saved on each story since ${d.costed_since ? when(d.costed_since) : "today"}; stories before that have no cost here. Voiced stories only (test runs left out: ${int(d.test_runs_30d)} in the last 30 days). Days and months are UTC. ${int(d.people_ever)} people have made a story so far.</p>
+<p class="cap">As of ${when(d.made_at)}. Real people only: test stories are left out (${int(d.test_runs_30d)} in the last 30 days, from the test tools, development builds and the exemptions list). Costs are saved on each story since ${d.costed_since ? when(d.costed_since) : "today"}. Money is US dollars. Days and months are UTC. ${int(d.people_ever)} people have made a story so far.</p>
+
+<h2>Money</h2>
+<section class="card"><div class="grid">
+  <div><div class="big ${tone(netMonth)}">${dollars(netMonth)}</div><div class="cap">net this month: ${dollars(mm.proceeds_cents)} in after Apple (${dollars(mm.gross_cents)} before), ${dollars(mm.cost_cents)} out, ${plural(mm.payers, "person paid", "people paid")}</div></div>
+  <div><div class="big ${tone(netAll)}">${dollars(netAll)}</div><div class="cap">net all time: ${dollars(ma.proceeds_cents)} in after Apple (${dollars(ma.gross_cents)} before), ${dollars(ma.cost_cents)} out, ${plural(ma.payers, "person has paid", "people have paid")}</div></div>
+  <div><div class="big">${dollars(free.cents_month)}</div><div class="cap">spent this month on stories for people who have never paid (${int(free.people_month)} people); ${dollars(free.cents)} all time (${int(free.people)} people)</div></div>
+  <div><div class="big">${int(d.events)}</div><div class="cap">purchase events from Adapty so far (${int(d.sandbox_events)} of them sandbox, not counted)</div></div>
+</div>
+<p class="sub">By plan, all time</p>
+<table><tr><th>plan</th><th>people who paid</th><th>brings in a person</th><th>costs a person</th><th>left a person</th></tr>${cohortRows || '<tr><td colspan="5" class="muted">Nobody has paid yet.</td></tr>'}</table>
+<p class="note">Money in comes from Adapty's purchase events as they happen (price before Apple's cut, proceeds after). Costs are the stories and fixes of real people. A person on two plans counts in both.</p></section>
 
 <h2>Today and this month</h2>
 <section class="card"><div class="grid">
@@ -98,12 +123,13 @@ function render(d) {
 </div></section>
 
 <h2>What one costs us (last 30 days)</h2>
-<section class="card wide"><table>
+<section class="card wide">${real ? "" : '<p class="note">No real stories with a saved cost yet, so these are test stories (the same code, the same prices).</p>'}<table>
 <tr><th></th><th>made</th><th>writer and checks</th><th>voice</th><th>each</th><th>median</th><th>most</th><th>characters voiced</th></tr>
 ${costRow("A new story", story)}
 ${costRow("A fix", fix)}
+<tr><td>A story with its fixes so far</td><td>${int(wf.n)}</td><td colspan="2" class="muted">${num(wf.fixes).toFixed(1)} fixes a story on average</td><td><b>${wf.n ? cents(wf.cents) : "–"}</b></td><td colspan="3" class="muted">recounted live: a fix made later joins its story's total</td></tr>
 </table>
-<p class="note">Writer and checks: every model call in the request at Anthropic's list prices. Voice: characters sent to Inworld at $25 a million (the on-demand price). Adapty's revenue is not on this page.</p></section>
+<p class="note">Writer and checks: every model call in the request at Anthropic's list prices. Voice: characters sent to Inworld at $25 a million (the on-demand price).</p></section>
 
 <h2>Per person, by month</h2>
 ${monthRows || '<p class="muted">Nothing yet.</p>'}
@@ -111,7 +137,7 @@ ${monthRows || '<p class="muted">Nothing yet.</p>'}
 <h2>Recording at the same moment (last 30 days)</h2>
 <section class="card">
   <div class="grid"><div><div class="big">${int(conc.peak)}</div><div class="cap">most stories recording at once, ${when(conc.peak_at)}</div></div>
-  <div><div class="big">${int(conc.n)}</div><div class="cap">voiced stories started</div></div></div>
+  <div><div class="big">${int(conc.n)}</div><div class="cap">voiced stories started, test ones included (they use the same slots)</div></div></div>
   <p class="sub">When a story started, how many were recording (itself included)</p>
   ${bar("alone", num(conc.c1), concMax)}${bar("2", num(conc.c2), concMax)}${bar("3", num(conc.c3), concMax)}${bar("4", num(conc.c4), concMax)}${bar("5 or more", num(conc.c5), concMax)}
   <p class="note">Inworld allows 5 recordings at once on the on-demand plan, 10 on Creator, 50 on Builder, 150 on Developer. A story records two pieces at a time, so two stories at the same moment use four of the five.</p>
