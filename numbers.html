@@ -125,10 +125,12 @@ ${monthRows || '<p class="muted">Nothing yet.</p>'}
 async function load() {
   const main = document.getElementById("main");
   const key = new URLSearchParams(location.hash.replace(/^#/, "")).get("k") || "";
-  if (!key) { main.innerHTML = '<h1>Manifest numbers</h1><p class="cap">Open this page from the saved link, which carries its key.</p>'; return; }
+  // Without the key, or with a wrong one, the page is just its title (Trevor, Oct 7: no hint about a key).
+  if (!key) { main.innerHTML = '<h1>Manifest numbers</h1>'; return; }
   try {
     const r = await fetch(`${SERVER}?k=${encodeURIComponent(key)}`, { cache: "no-store" });
-    if (!r.ok) { main.innerHTML = `<h1>Manifest numbers</h1><p class="cap">${r.status === 404 ? "That key is not right. Open the page from the saved link." : "The numbers could not be read just now (" + r.status + "). Try again in a minute."}</p>`; return; }
+    if (r.status === 404) { main.innerHTML = '<h1>Manifest numbers</h1>'; return; }
+    if (!r.ok) { main.innerHTML = `<h1>Manifest numbers</h1><p class="cap">The numbers could not be read just now (${r.status}). Try again in a minute.</p>`; return; }
     main.innerHTML = render(await r.json());
   } catch (e) {
     main.innerHTML = '<h1>Manifest numbers</h1><p class="cap">The numbers could not be read just now. Check the connection and try again.</p>';
