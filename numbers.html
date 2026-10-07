@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Manifest numbers</title>
+<style>
+  :root { color-scheme: light dark; --bg: #faf7f8; --card: #fff; --ink: #1d1a1c; --mute: #6c6468; --line: #e6dfe2; --fill: #8e5a86; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #15121a; --card: #1f1a26; --ink: #f1ebf0; --mute: #a69aa6; --line: #342c3c; --fill: #b98bb0; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; background: var(--bg); color: var(--ink); font: 16px/1.45 -apple-system, system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 8px 0 2px; } h2 { font-size: 17px; margin: 28px 0 10px; } h3 { font-size: 16px; margin: 0 0 10px; }
+  .muted, .cap, .sub, .note { color: var(--mute); } .cap { font-size: 13px; } .sub { font-size: 13px; margin: 14px 0 6px; } .note { font-size: 13px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 10px 0; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; } .big { font-size: 26px; font-weight: 600; line-height: 1.1; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; } td, th { text-align: left; padding: 6px 8px 6px 0; border-bottom: 1px solid var(--line); vertical-align: top; } th { font-weight: 600; color: var(--mute); font-size: 12px; }
+  tr:last-child td { border-bottom: 0; }
+  .bar { display: flex; align-items: center; gap: 8px; font-size: 13px; margin: 3px 0; } .lbl { width: 64px; color: var(--mute); } .track { flex: 1; height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; } .fill { display: block; height: 100%; background: var(--fill); } .n { width: 40px; text-align: right; }
+  .wide { overflow-x: auto; }
+</style>
+</head>
+<body>
+<main id="main"><h1>Manifest numbers</h1><p class="cap">Loading…</p></main>
+<script>
+// The numbers page: the figures come live from our own server (the `numbers` function) each time this page is opened.
+// The key is in this page's address after the #, which the browser never sends to GitHub; without it the server
+// answers nothing. Counts and cents only.
+const SERVER = "https://bprblozzuniqelpzmlvl.supabase.co/functions/v1/numbers";
+const PLAN_NET_CENTS = 1104; // US$12.99 a month, after Apple's 15% (the Small Business Program)
+
+const num = (x) => (typeof x === "number" ? x : Number(x ?? 0)) || 0;
+const int = (x) => num(x).toLocaleString("en-US", { maximumFractionDigits: 0 });
+const cents = (x) => (x === null || x === undefined ? "–" : `${num(x).toFixed(1)}¢`);
+const dollars = (x) => `$${(num(x) / 100).toFixed(2)}`;
+const pct = (part, whole) => (num(whole) ? `${Math.round((num(part) / num(whole)) * 100)}%` : "–");
+const month = (iso) => new Date(String(iso) + "T00:00:00Z").toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+const day = (iso) => new Date(String(iso) + "T00:00:00Z").toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+const when = (iso) => (iso ? new Date(String(iso)).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "–");
+const plural = (n, one, many) => `${int(n)} ${num(n) === 1 ? one : many}`;
+
+function bar(label, n, max) {
+  const w = max ? Math.max(2, Math.round((n / max) * 100)) : 2;
+  return `<div class="bar"><span class="lbl">${label}</span><span class="track"><span class="fill" style="width:${w}%"></span></span><span class="n">${int(n)}</span></div>`;
+}
+
+function render(d) {
+  const today = d.today || {};
+  const m = d.month || {};
+  const cost = d.cost || [];
+  const story = cost.find((c) => c.kind === "story");
+  const fix = cost.find((c) => c.kind === "fix");
+  const weeks = d.weeks || [];
+  const months = d.months || [];
+  const days = d.days || [];
+  const conc = d.concurrency || {};
+  const dayFor = (mo) => days.find((x) => x.month === mo) || {};
+  const concMax = Math.max(num(conc.c1), num(conc.c2), num(conc.c3), num(conc.c4), num(conc.c5));
+
+  const costRow = (name, c) => c
+    ? `<tr><td>${name}</td><td>${int(c.n)}</td><td>${cents(c.text_cents)}</td><td>${cents(c.voice_cents)}</td><td><b>${cents(c.cents)}</b></td><td>${cents(c.median_cents)}</td><td>${cents(c.max_cents)}</td><td>${int(c.chars)}</td></tr>`
+    : `<tr><td>${name}</td><td colspan="7" class="muted">none with a saved cost yet</td></tr>`;
+
+  const monthRows = months.map((mo) => {
+    const dd = dayFor(mo.month);
+    const left = PLAN_NET_CENTS - num(mo.cents_per_person);
+    const bmax = Math.max(num(mo.b1), num(mo.b2_3), num(mo.b4_10), num(mo.b11_39), num(mo.b40));
+    return `<section class="card">
+      <h3>${month(mo.month)}</h3>
+      <div class="grid">
+        <div><div class="big">${int(mo.people)}</div><div class="cap">people made a story</div></div>
+        <div><div class="big">${int(mo.stories)}</div><div class="cap">stories, ${num(mo.stories_per_person).toFixed(1)} a person</div></div>
+        <div><div class="big">${int(mo.fixes)}</div><div class="cap">fixes, ${num(mo.fixes_per_person).toFixed(1)} a person</div></div>
+        <div><div class="big">${dollars(mo.cents_per_person)}</div><div class="cap">cost a person; ${dollars(left)} of the ${dollars(PLAN_NET_CENTS)} a subscriber brings in is left</div></div>
+      </div>
+      <p class="sub">Stories a person this month</p>
+      ${bar("1", num(mo.b1), bmax)}${bar("2 to 3", num(mo.b2_3), bmax)}${bar("4 to 10", num(mo.b4_10), bmax)}${bar("11 to 39", num(mo.b11_39), bmax)}${bar("40", num(mo.b40), bmax)}
+      <p class="sub">Reached a limit</p>
+      <table><tr><td>Three stories in a day</td><td>${plural(dd.hit_day_stories, "person", "people")}, on ${plural(dd.days_at_story_limit, "day", "days")} in all</td></tr>
+      <tr><td>Forty stories in the month</td><td>${plural(mo.hit_month_stories, "person", "people")}</td></tr>
+      <tr><td>Twenty fixes in a day</td><td>${plural(dd.hit_day_fixes, "person", "people")}</td></tr>
+      <tr><td>100 fixes in the month</td><td>${plural(mo.hit_month_fixes, "person", "people")}</td></tr></table>
+    </section>`;
+  }).join("");
+
+  const weekRows = weeks.map((w) => `<tr><td>${day(w.week)}</td><td>${int(w.people)}</td><td>${int(w.stories)}</td><td>${int(w.fixes)}</td><td>${w.story_cents === null || w.story_cents === undefined ? "–" : cents(w.story_cents)}</td><td>${dollars(w.cents)}</td></tr>`).join("");
+
+  return `<h1>Manifest numbers</h1>
+<p class="cap">As of ${when(d.made_at)}. Costs are saved on each story since ${d.costed_since ? when(d.costed_since) : "today"}; stories before that have no cost here. Voiced stories only (test runs left out: ${int(d.test_runs_30d)} in the last 30 days). Days and months are UTC. ${int(d.people_ever)} people have made a story so far.</p>
+
+<h2>Today and this month</h2>
+<section class="card"><div class="grid">
+  <div><div class="big">${int(today.stories)}</div><div class="cap">stories today, ${int(today.fixes)} fixes, ${dollars(today.cents)}</div></div>
+  <div><div class="big">${int(m.stories)}</div><div class="cap">stories this month, ${int(m.fixes)} fixes, ${dollars(m.cents)}</div></div>
+  <div><div class="big">${int(m.people)}</div><div class="cap">people this month</div></div>
+  <div><div class="big">${int(m.failed)}</div><div class="cap">failed of ${int(m.finished)} requests this month (${pct(m.failed, m.finished)})</div></div>
+</div></section>
+
+<h2>What one costs us (last 30 days)</h2>
+<section class="card wide"><table>
+<tr><th></th><th>made</th><th>writer and checks</th><th>voice</th><th>each</th><th>median</th><th>most</th><th>characters voiced</th></tr>
+${costRow("A new story", story)}
+${costRow("A fix", fix)}
+</table>
+<p class="note">Writer and checks: every model call in the request at Anthropic's list prices. Voice: characters sent to Inworld at $25 a million (the on-demand price). Adapty's revenue is not on this page.</p></section>
+
+<h2>Per person, by month</h2>
+${monthRows || '<p class="muted">Nothing yet.</p>'}
+
+<h2>Recording at the same moment (last 30 days)</h2>
+<section class="card">
+  <div class="grid"><div><div class="big">${int(conc.peak)}</div><div class="cap">most stories recording at once, ${when(conc.peak_at)}</div></div>
+  <div><div class="big">${int(conc.n)}</div><div class="cap">voiced stories started</div></div></div>
+  <p class="sub">When a story started, how many were recording (itself included)</p>
+  ${bar("alone", num(conc.c1), concMax)}${bar("2", num(conc.c2), concMax)}${bar("3", num(conc.c3), concMax)}${bar("4", num(conc.c4), concMax)}${bar("5 or more", num(conc.c5), concMax)}
+  <p class="note">Inworld allows 5 recordings at once on the on-demand plan, 10 on Creator, 50 on Builder, 150 on Developer. A story records two pieces at a time, so two stories at the same moment use four of the five.</p>
+</section>
+
+<h2>By week</h2>
+<section class="card wide"><table><tr><th>week of</th><th>people</th><th>stories</th><th>fixes</th><th>a story</th><th>in all</th></tr>${weekRows || '<tr><td colspan="6" class="muted">Nothing yet.</td></tr>'}</table></section>
+<p class="note">A cost on a saved row keeps the price it was saved at. A model the price list does not know counts as free. When two stories run in the same server instance at the same moment, a few of the first one's later model calls can land on the second one's row: rare, and a cent or two.</p>`;
+}
+
+async function load() {
+  const main = document.getElementById("main");
+  const key = new URLSearchParams(location.hash.replace(/^#/, "")).get("k") || "";
+  if (!key) { main.innerHTML = '<h1>Manifest numbers</h1><p class="cap">Open this page from the saved link, which carries its key.</p>'; return; }
+  try {
+    const r = await fetch(`${SERVER}?k=${encodeURIComponent(key)}`, { cache: "no-store" });
+    if (!r.ok) { main.innerHTML = `<h1>Manifest numbers</h1><p class="cap">${r.status === 404 ? "That key is not right. Open the page from the saved link." : "The numbers could not be read just now (" + r.status + "). Try again in a minute."}</p>`; return; }
+    main.innerHTML = render(await r.json());
+  } catch (e) {
+    main.innerHTML = '<h1>Manifest numbers</h1><p class="cap">The numbers could not be read just now. Check the connection and try again.</p>';
+  }
+}
+load();
+</script>
+</body>
+</html>
