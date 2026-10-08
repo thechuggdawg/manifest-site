@@ -62,6 +62,7 @@ function render(d) {
   const months = d.months || [];
   const days = d.days || [];
   const conc = d.concurrency || {};
+  const q = d.quality || {};
   const dayFor = (mo) => days.find((x) => x.month === mo) || {};
   const concMax = Math.max(num(conc.c1), num(conc.c2), num(conc.c3), num(conc.c4), num(conc.c5));
   const netMonth = num(mm.proceeds_cents) - num(mm.cost_cents);
@@ -113,6 +114,15 @@ function render(d) {
 <p class="sub">By plan, all time</p>
 <table><tr><th>plan</th><th>people who paid</th><th>brings in a person</th><th>costs a person</th><th>left a person</th></tr>${cohortRows || '<tr><td colspan="5" class="muted">Nobody has paid yet.</td></tr>'}</table>
 <p class="note">Money in comes from Adapty's purchase events as they happen (price before Apple's cut, proceeds after). Costs are the stories and fixes of real people. A person on two plans counts in both.</p></section>
+
+<h2>The stories (last 30 days)</h2>
+<section class="card"><div class="grid">
+  <div><div class="big">${pct(q.finished, q.n)}</div><div class="cap">listened to the end (${int(q.finished)} of ${int(q.n)} stories)</div></div>
+  <div><div class="big">${pct(q.replayed, q.n)}</div><div class="cap">played again at least once; ${num(q.plays_avg).toFixed(1)} plays a story</div></div>
+  <div><div class="big">${q.answered ? pct(q.loved, q.answered) : "–"}</div><div class="cap">said "Loved it" (${int(q.answered)} answered: ${int(q.loved)} loved it, ${int(q.not_quite)} not quite, ${int(q.with_words)} wrote why)</div></div>
+  <div><div class="big">${int(q.n)}</div><div class="cap">stories made by real people in the last 30 days</div></div>
+</div>
+<p class="note">A story played again is one someone liked. "Loved it" and "Not quite" are the question on the player's end screen; the written answers are printed with tools/story-check/feedback_log.py.</p></section>
 
 <h2>Today and this month</h2>
 <section class="card"><div class="grid">
