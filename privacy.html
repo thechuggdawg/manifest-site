@@ -1,17 +1,19 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Privacy Policy, Manifest Stories</title><link rel="stylesheet" href="style.css"></head><body>
 <nav><a href="index.html">Manifest Stories</a></nav>
-<h1>Privacy policy</h1><p class="muted">Last updated September 15, 2026</p>
+<h1>Privacy policy</h1><p class="muted">Last updated October 15, 2026</p>
 <p>Manifest Stories writes and records short personal stories for you. To do that it needs some details about your life. This page says plainly what we keep, where it goes, and how to get rid of it.</p>
 <h2>What the app stores</h2>
 <ul>
-<li><strong>Your profile.</strong> Your first name, where you live, your age range, what you do, and the people you add (a name, who they are to you, and one note about them).</li>
+<li><strong>Your profile.</strong> Your first name, age range, gender, where you live, your work and how you feel about it, your love life, the people you add, and what you tell the app about what matters to you, what you're working through and the life you want.</li>
 <li><strong>Your wishes and answers.</strong> What you type or dictate when you ask for a story, and the answers you give to the app's follow-up questions.</li>
-<li><strong>Your stories.</strong> The written story, its audio recording, and any corrections you send.</li>
+<li><strong>Your stories.</strong> The written story, its audio recording, any corrections you send, what you tell us on the screen at the end of a story, and a record of how it played (how often you open it, whether you finish it, and any pauses or stalls) so we can fix playback problems.</li>
 <li><strong>Things the app learns.</strong> Small facts pulled from your stories and answers (a place you go, something you own) so later stories fit you better. You can see and remove every one of them on the About you screen.</li>
+<li><strong>Your Apple sign-in, if you use it.</strong> If you sign in with Apple, we keep the name and email address Apple shares with us. Apple lets you hide your real email, and then we only get a private Apple address that forwards to you.</li>
 </ul>
-<p>This is kept on our servers (hosted by Supabase in the United States) under an anonymous ID for your phone. There is no account, no email address and no password.</p>
+<p>This is kept on our servers (hosted by Supabase in the United States) under an account the app makes for you the first time you open it. The account has no password, and no email address unless you sign in with Apple.</p>
 <h2>Where your details go</h2>
-<p>To write a story, the app sends your wish, your answers and the relevant parts of your profile to Anthropic, whose Claude AI model writes it. To record it, the finished text goes to Inworld, an AI voice. Our app data is hosted by Supabase, and subscriptions are checked with Adapty.</p>
+<p>To write a story, the app sends your wish, your answers and the relevant parts of your profile to Anthropic, whose Claude AI model writes it. To record it, the finished text goes to Inworld, an AI voice. Our app data is hosted by Supabase, subscriptions are checked with Adapty, and Sign in with Apple goes through Apple.</p>
+<p>To see how the app is used, it sends PostHog a short note when you do things like open or finish a story, reach the next of the first questions, or start a story from one of the cards (Love, Money and so on). These notes carry labels and numbers under your account's ID, never anything you typed or said. If the app crashes or something goes wrong, a report goes to Sentry: what went wrong, the app's last few steps before it, and your phone's model and iOS version. It never includes your stories, your profile or anything you typed. We have set PostHog and Sentry not to keep your IP address or work out where you are.</p>
 <p>These services receive only what they need to do their part, use it only to provide that service to us, and are required to protect it at least as well as this policy describes. We do not use your details to train AI models or allow these services to sell them.</p>
 <h2>What we don't do</h2>
 <ul>
@@ -20,23 +22,23 @@
 <li>The microphone is only used to turn your speech into text on your phone, when you tap the mic. Nothing you say is recorded or sent anywhere as audio.</li>
 </ul>
 <h2>Purchases</h2>
-<p>Subscriptions are handled by Apple. We use Adapty to check whether your subscription is active and to count how often the subscription screen is shown, linked to your phone's anonymous ID. Adapty doesn't collect your advertising identifier or IP address for us. We never see your payment details.</p>
+<p>Subscriptions are handled by Apple. We use Adapty to check whether your subscription is active and to count how often the subscription screen is shown, linked to your account's ID. Adapty doesn't collect your advertising identifier or IP address for us. Adapty also sends our server a record of each purchase, renewal, cancellation or refund: the product, the price, the currency and the dates. We never see your payment details.</p>
 <h2>Withdrawing your consent</h2>
-<p>You can stop sharing your details at any time. In the app, open Settings and tap "Clear all my data": everything is deleted from our servers, and nothing more is sent unless you make another story. Or email <a href="mailto:haymaker.devteam@gmail.com">haymaker.devteam@gmail.com</a> and we will delete it for you.</p>
+<p>You can stop sharing your details at any time. In the app, open Settings and tap "Delete my account": your stories, recordings, profile and account are deleted from our servers, and the app starts over as if it were new. Or email <a href="mailto:haymaker.devteam@gmail.com">haymaker.devteam@gmail.com</a> and we will delete it for you.</p>
 <h2>Deleting things</h2>
 <ul>
 <li><strong>One story:</strong> swipe it left on Your stories and tap Delete. The story, its recording and its corrections are gone for good.</li>
 <li><strong>A remembered fact or a person:</strong> remove it on the About you screen.</li>
-<li><strong>Everything:</strong> Settings, then "Clear all my data". Every story, recording, your profile and everything learned is deleted from our servers.</li>
+<li><strong>Everything:</strong> Settings, then "Delete my account". Every story and recording, your profile, everything learned and your account itself are deleted from our servers. We keep a record of each story request and each payment (the dates, the amounts, whether it worked) for our accounts, without your stories or profile. Usage notes, crash reports and purchase records already sent to PostHog, Sentry and Adapty are not deleted.</li>
 </ul>
 <h2>How long we keep things</h2>
-<p>Until you delete them. Nothing is kept for a set period and then thrown away; your stories and profile stay as long as you want them, and go when you remove them. If you delete the app without clearing your data first, the stories stay on our servers under your phone's anonymous ID, so they come back if you reinstall on the same phone. Email us if you want them removed.</p>
+<p>Until you delete them. Nothing is kept for a set period and then thrown away; your stories and profile stay as long as you want them, and go when you remove them. If you delete the app without deleting your account first, your stories stay on our servers. If you signed in with Apple, sign in again with the same Apple ID and they come back, and you can delete your account from there. If you didn't, we have no way to tell which stories were yours, so please delete your account in Settings before you delete the app.</p>
 <h2>Keeping it safe</h2>
-<p>Everything travels over encrypted connections. Only the app, signed in with your phone's anonymous ID, can read your stories and profile. The keys for the AI writing and voice services stay on our server and are never inside the app.</p>
+<p>Everything travels over encrypted connections. Your stories and profile are locked to your account, so no other user can read them. The keys for the AI writing and voice services stay on our server and are never inside the app.</p>
 <h2>Your rights</h2>
-<p>You can see everything the app holds about you inside the app (Your stories and About you), change it, and delete it, without asking us. If you would rather we do it, or you have a question about your data, email <a href="mailto:haymaker.devteam@gmail.com">haymaker.devteam@gmail.com</a>.</p>
+<p>You can see your stories and most of your profile inside the app (Your stories and About you), change them, and delete them, without asking us. If you want a copy of anything else we hold about you, would rather we do it for you, or have a question about your data, email <a href="mailto:haymaker.devteam@gmail.com">haymaker.devteam@gmail.com</a>.</p>
 <h2>Children</h2>
-<p>The app is for adults and is not directed at children under 13.</p>
+<p>The app is for adults 18 and over, and stops anyone who gives a younger age.</p>
 <h2>Changes and contact</h2>
 <p>If this policy changes, the date at the top changes with it. Questions: <a href="mailto:haymaker.devteam@gmail.com">haymaker.devteam@gmail.com</a>.</p>
 </body></html>
